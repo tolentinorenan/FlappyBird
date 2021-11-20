@@ -1,2 +1,2 @@
 # FlappyBird
- Flappy Bird + IF
+ Flappy Bird + NEAT
