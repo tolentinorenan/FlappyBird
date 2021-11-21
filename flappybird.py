@@ -235,7 +235,9 @@ def main(genomas, config):
         for i, passaro in enumerate(passaros):
             passaro.mover()
             lista_genomas[i].fitness += 0.1
-            output = redes[i].activate((passaro.y, abs(passaro.y - canos[indice_cano]), abs(passaro.y - canos[indice_cano].pos_base)))
+            output = redes[i].activate((passaro.y,
+                                        abs(passaro.y - canos[indice_cano].altura),
+                                        abs(passaro.y - canos[indice_cano].pos_base)))
             if output[0] > 0.5:
                 passaro.pular()
         chao.mover()
@@ -246,6 +248,10 @@ def main(genomas, config):
             for i, passaro in enumerate(passaros):
                 if cano.colidir(passaro):
                     passaros.pop(i)
+                    if ai_jogando:
+                        lista_genomas[i].fitness -= 1
+                        lista_genomas.pop(i)
+                        redes.pop(i)
                 if not cano.passou and passaro.x > cano.x:
                     cano.passou = True
                     adicionar_cano = True
@@ -256,17 +262,36 @@ def main(genomas, config):
         if adicionar_cano:
             pontos += 1
             canos.append(Cano(600))
+            for genoma in lista_genomas:
+                genoma.fitness += 5
         for cano in remover_canos:
             canos.remove(cano)
 
         for i, passaro in enumerate(passaros):
             if (passaro.y + passaro.imagem.get_height()) > chao.y or passaro.y < 0:
                 passaros.pop(i)
-
+                if ai_jogando:
+                    lista_genomas.pop(i)
+                    redes.pop(i)
         desenhar_tela(tela, passaros, canos, chao, pontos)
 
-def rodar():
-    pass
+def rodar(caminho_config):
+    config = neat.config.Config(neat.DefaultGenome,
+                                neat.DefaultReproduction,
+                                neat.DefaultSpeciesSet,
+                                neat.DefaultStagnation,
+                                caminho_config)
+
+    populacao = neat.Population(config)
+    populacao.add_reporter(neat.StdOutReporter(True))
+    populacao.add_reporter(neat.StatisticsReporter())
+
+    if ai_jogando:
+        populacao.run(main, 50)
+    else:
+        main(None, None)
 
 if __name__ == '__main__':
-    main()
+    caminho = os.path.dirname(__file__)
+    caminho_config = os.path.join(caminho, 'config.txt')
+    rodar(caminho_config)
